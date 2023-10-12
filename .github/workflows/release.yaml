@@ -45,7 +45,10 @@ jobs:
       - name: "Get previous tag"
         id: get_previous_tag
         run: |
-            echo "previous_tag=$(git tag | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | sort -V -r | tail -n +2 | head -n 1)" >> ${GITHUB_OUTPUT}
+            HOGE=$(git tag | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | sort -V -r)
+            echo ${HOGE}
+            PREV_TAG=$(git tag | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | sort -V -r | tail -n +2 | head -n 1)
+            echo "previous_tag=${PREV_TAG}" >> ${GITHUB_OUTPUT}
       - name: "Create Release"
         id: create_release
         run: |
@@ -61,7 +64,7 @@ jobs:
             -F prerelease=${{ steps.check_version.outputs.prerelease }} \
             -F generate_release_notes=true)
             echo ${RESP}
-            echo "upload_url=$(echo ${RESP} | jq -r '.properties.upload_url')" >> ${GITHUB_OUTPUT}
+            echo "upload_url=$(echo ${RESP} | jq -r '.upload_url')" >> ${GITHUB_OUTPUT}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: "Upload Release Asset"
