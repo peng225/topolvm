@@ -49,7 +49,7 @@ jobs:
       - name: "Create Release"
         id: create_release
         run: |
-            echo ${{ steps.get_previous_tag.outputs.versprevious_tagion }}
+            echo ${{ steps.get_previous_tag.outputs.previous_tag }}
             RESP=$(gh api \
             -H "Accept: application/vnd.github+json" \
             --method POST \
