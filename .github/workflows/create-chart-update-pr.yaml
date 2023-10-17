@@ -1,4 +1,4 @@
-name: "manual workflow with inputs"
+name: "Create chart update Pull Request"
 
 on:
   workflow_dispatch:
@@ -11,24 +11,21 @@ on:
         type: string
 
 jobs:
-  release:
+  create-chart-update-pr:
     runs-on: "ubuntu-latest"
     steps:
       - name: "Validate input"
         run: |
-          APP_VERSION=$(echo ${{ inputs.app-version }} | grep -E "^[0-9]+.[0-9]+.[0-9]+$")
-          if [ -z "${APP_VERSION}" ]; then
-            echo "Invalid app version."
-            exit 1
-          fi
-          CHART_VERSION=$(echo ${{ inputs.chart-version }} | grep -E "^[0-9]+.[0-9]+.[0-9]+$")
-          if [ -z "${CHART_VERSION}" ]; then
-            echo "Invalid chart version."
-            exit 1
-          fi
+          # The exit code will be 1 if the grep cannot find the pattern.
+          echo ${{ inputs.app-version }} | grep -E "^[0-9]+.[0-9]+.[0-9]+$"
+          echo ${{ inputs.chart-version }} | grep -E "^[0-9]+.[0-9]+.[0-9]+$"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
       - name: "Create a branch"
         run: |
             git switch main
