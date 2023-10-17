@@ -24,6 +24,8 @@ jobs:
           fetch-depth: 0
       - name: Configure Git
         run: |
+          # ref. https://github.com/orgs/community/discussions/26560#discussioncomment-3252340
+          git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: "Create a branch"
         run: |
