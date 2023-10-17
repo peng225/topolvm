@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: "Create a branch"
-          run: |
+        run: |
             git switch main
             git pull
             git switch -c bump-chart-${{ inputs.chart-version }}
