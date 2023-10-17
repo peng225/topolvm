@@ -1,0 +1,52 @@
+name: "manual workflow with inputs"
+
+on:
+  workflow_dispatch:
+    inputs:
+      app-version:
+        description: app version (e.g. 0.1.0)
+        type: string
+      chart-version:
+        description: chart version (e.g. 0.1.0)
+        type: string
+
+jobs:
+  release:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Validate input"
+        run: |
+          APP_VERSION=$(echo ${{ inputs.app-version }} | grep -E "^[0-9]+.[0-9]+.[0-9]+$")
+          if [ -z "${APP_VERSION}" ]; then
+            echo "Invalid app version."
+            exit 1
+          fi
+          CHART_VERSION=$(echo ${{ inputs.chart-version }} | grep -E "^[0-9]+.[0-9]+.[0-9]+$")
+          if [ -z "${CHART_VERSION}" ]; then
+            echo "Invalid chart version."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+      - name: "Create a branch"
+          run: |
+            git switch main
+            git pull
+            git switch -c bump-chart-${{ inputs.chart-version }}
+      - name: "Update files"
+        run: |
+          sed -r -i "s/checkout topolvm-chart-v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+/checkout topolvm-chart-v${{ inputs.chart-version }}/g" example/README.md
+          sed -r -i "s/appVersion: [[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+/appVersion: ${{ inputs.app-version }}/g" charts/topolvm/Chart.yaml
+          sed -r -i "s/^version: [[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+/version: ${{ inputs.chart-version }}/g" charts/topolvm/Chart.yaml
+          sed -r -i "s/ghcr.io\/topolvm\/topolvm-with-sidecar:[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+/ghcr.io\/topolvm\/topolvm-with-sidecar:${{ inputs.app-version }}/g" charts/topolvm/Chart.yaml
+          sed -r -i "s/ghcr.io\/topolvm\/topolvm:[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+/ghcr.io\/topolvm\/topolvm:${{ inputs.app-version }}/g" charts/topolvm/Chart.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Create pull request"
+        run: |
+          git commit -a -s -m "Bump chart version to ${{ inputs.chart-version }}"
+          git push --set-upstream origin bump-chart-${{ inputs.chart-version }}
+          gh pr create --fill
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
