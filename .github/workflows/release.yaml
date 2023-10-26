@@ -67,7 +67,7 @@ jobs:
             -f previous_tag_name="${{ steps.get_previous_tag.outputs.previous_tag }}" \
             -F draft=true \
             -F prerelease=${{ steps.check_version.outputs.prerelease }} \
-            -F generate_release_notes=true)
+            -F generate_release_notes=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: "Upload Release Asset"
