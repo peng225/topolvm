@@ -15,7 +15,6 @@ import (
 	"github.com/topolvm/topolvm/filesystem"
 	"github.com/topolvm/topolvm/lvmd/proto"
 	"golang.org/x/sys/unix"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	mountutil "k8s.io/mount-utils"
@@ -36,7 +35,7 @@ const (
 var nodeLogger = ctrl.Log.WithName("driver").WithName("node")
 
 // NewNodeServer returns a new NodeServer.
-func NewNodeServer(nodeName string, conn *grpc.ClientConn, mgr manager.Manager) (csi.NodeServer, error) {
+func NewNodeServer(nodeName string, vgServiceClient proto.VGServiceClient, lvServiceClient proto.LVServiceClient, mgr manager.Manager) (csi.NodeServer, error) {
 	lvService, err := k8s.NewLogicalVolumeService(mgr)
 	if err != nil {
 		return nil, err
@@ -45,8 +44,8 @@ func NewNodeServer(nodeName string, conn *grpc.ClientConn, mgr manager.Manager) 
 	return &nodeServer{
 		server: &nodeServerNoLocked{
 			nodeName:     nodeName,
-			client:       proto.NewVGServiceClient(conn),
-			lvService:    proto.NewLVServiceClient(conn),
+			client:       vgServiceClient,
+			lvService:    lvServiceClient,
 			k8sLVService: lvService,
 			mounter: mountutil.SafeFormatAndMount{
 				Interface: mountutil.New(""),
@@ -486,7 +485,7 @@ func (s *nodeServerNoLocked) NodeExpandVolume(ctx context.Context, req *csi.Node
 
 	// We need to check the capacity range but don't use the converted value
 	// because the filesystem can be resized without the requested size.
-	_, err := convertRequestCapacity(req.GetCapacityRange().GetRequiredBytes(), req.GetCapacityRange().GetLimitBytes())
+	_, err := convertRequestCapacityBytes(req.GetCapacityRange().GetRequiredBytes(), req.GetCapacityRange().GetLimitBytes())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
